@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Pace & Training Zone Calculator — Polar Endurance</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,500;0,700;0,900;1,300;1,500&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #2C5F6B; --teal-mid: #3a7a8a; --teal-light: #4A9CAD;
+    --teal-pale: #d6eaed; --dark: #1C2B30; --charcoal: #2e3d42;
+    --white: #ffffff; --off-white: #f5f8f9; --grey-light: #e8eef0;
+    --grey-mid: #8a9ea5; --grey-text: #4a5e64;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Barlow', sans-serif; color: var(--dark); background: var(--off-white); line-height: 1.65; font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+  /* NAV */
+  nav { background: rgba(28,43,48,0.97); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; height: 64px; border-bottom: 1px solid rgba(74,156,173,0.2); }
+  .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .nav-logo-mark { width: 32px; height: 32px; background: var(--teal); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); flex-shrink: 0; }
+  .nav-logo-text .brand { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.16em; color: var(--white); text-transform: uppercase; display: block; }
+  .nav-logo-text .sub { font-family: 'Barlow Condensed', sans-serif; font-weight: 300; font-size: 10px; letter-spacing: 0.2em; color: var(--teal-light); text-transform: uppercase; display: block; }
+  .nav-back { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.6); text-decoration: none; transition: color 0.2s; }
+  .nav-back:hover { color: var(--teal-light); }
+
+  /* HERO */
+  .hero { background: var(--dark); padding: 56px 40px 48px; text-align: center; border-bottom: 3px solid var(--teal); }
+  .eyebrow { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--teal-light); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .eyebrow::before, .eyebrow::after { content: ''; display: block; width: 28px; height: 1px; background: var(--teal-light); opacity: 0.5; }
+  .hero h1 { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(36px, 6vw, 64px); text-transform: uppercase; color: var(--white); line-height: 0.95; letter-spacing: -0.01em; margin-bottom: 14px; }
+  .hero h1 em { font-style: italic; color: var(--teal-light); }
+  .hero p { font-size: 16px; font-weight: 300; color: rgba(255,255,255,0.6); max-width: 520px; margin: 0 auto; }
+
+  /* TABS */
+  .tabs { display: flex; background: var(--charcoal); border-bottom: 2px solid var(--teal); max-width: 100%; overflow-x: auto; }
+  .tab { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.5); padding: 16px 32px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; border: none; background: none; }
+  .tab.active, .tab:hover { color: var(--white); border-bottom-color: var(--teal-light); }
+  .tab.active { color: var(--teal-light); }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+  .calc-grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
+
+  /* PANELS */
+  .panel { background: var(--white); border: 1px solid var(--grey-light); overflow: hidden; }
+  .panel-header { background: var(--teal); padding: 18px 24px; }
+  .panel-header h2 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--white); }
+  .panel-body { padding: 24px; }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--teal); margin-bottom: 7px; }
+  .form-group input, .form-group select { width: 100%; padding: 11px 14px; border: 1px solid #d0dde0; background: var(--off-white); font-family: 'Barlow', sans-serif; font-size: 15px; color: var(--dark); border-radius: 2px; outline: none; transition: border-color 0.2s; appearance: none; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--teal); background: var(--white); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .form-hint { font-size: 12px; color: var(--grey-mid); margin-top: 5px; font-style: italic; }
+  .divider-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--grey-mid); text-align: center; margin: 20px 0 16px; position: relative; }
+  .divider-label::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--grey-light); z-index: 0; }
+  .divider-label span { background: var(--white); padding: 0 12px; position: relative; z-index: 1; }
+
+  /* BUTTONS */
+  .btn { width: 100%; background: var(--teal); color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; padding: 14px; border: none; cursor: pointer; border-radius: 2px; margin-top: 4px; transition: background 0.2s; }
+  .btn:hover { background: var(--teal-mid); }
+  .btn-reset { background: transparent; color: var(--grey-mid); border: 1px solid var(--grey-light); margin-top: 8px; font-size: 11px; padding: 10px; }
+  .btn-reset:hover { background: var(--off-white); color: var(--grey-text); }
+
+  /* RESULTS */
+  .results-placeholder { text-align: center; padding: 60px 24px; color: var(--grey-mid); }
+  .results-placeholder .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .results-placeholder p { font-size: 14px; font-style: italic; }
+
+  /* VO2 MAX DISPLAY */
+  .vo2-display { background: var(--dark); padding: 24px; text-align: center; margin-bottom: 20px; }
+  .vo2-number { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 72px; color: var(--teal-light); line-height: 1; }
+  .vo2-unit { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; color: rgba(255,255,255,0.5); letter-spacing: 0.1em; margin-top: 4px; }
+  .vo2-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 6px; }
+  .vo2-fitness { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; color: var(--white); margin-top: 10px; padding: 8px 20px; display: inline-block; border-radius: 2px; }
+
+  /* RACE TABLE */
+  .section-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--teal-pale); }
+  .race-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  .race-table th { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--white); background: var(--teal); padding: 10px 14px; text-align: left; }
+  .race-table td { padding: 11px 14px; border-bottom: 1px solid var(--grey-light); font-size: 14px; color: var(--grey-text); }
+  .race-table tr:last-child td { border-bottom: none; }
+  .race-table tr:nth-child(even) td { background: var(--off-white); }
+  .race-table .highlight td { background: rgba(44,95,107,0.08) !important; font-weight: 600; color: var(--dark); }
+  .race-table .race-name { font-weight: 600; color: var(--dark); }
+  .race-table .pace { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; color: var(--teal); }
+  .race-table .time { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; font-size: 14px; }
+
+  /* ZONES */
+  .zones-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .zone-bar { border-radius: 2px; overflow: hidden; }
+  .zone-header { display: grid; grid-template-columns: 120px 1fr auto auto; gap: 8px; align-items: center; padding: 12px 14px; }
+  .zone-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .zone-desc { font-size: 12px; opacity: 0.8; }
+  .zone-hr { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; }
+  .zone-pace-val { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; opacity: 0.85; }
+  .z1 { background: #2d6e3e; color: white; }
+  .z2 { background: #4a9e5c; color: white; }
+  .z3 { background: #e6a817; color: white; }
+  .z4 { background: #d4631a; color: white; }
+  .z5 { background: #c0392b; color: white; }
+
+  /* PACE CALC RESULTS */
+  .pace-result-big { background: var(--dark); padding: 24px; text-align: center; margin-bottom: 16px; }
+  .pace-big { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 64px; color: var(--teal-light); line-height: 1; }
+  .pace-unit { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+  .pace-context { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; font-style: italic; }
+
+  .split-table { width: 100%; border-collapse: collapse; }
+  .split-table th { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--white); background: var(--charcoal); padding: 9px 14px; text-align: left; }
+  .split-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-light); font-size: 14px; color: var(--grey-text); }
+  .split-table tr:nth-child(even) td { background: var(--off-white); }
+  .split-table .bold { font-weight: 600; color: var(--dark); }
+
+  /* CTA */
+  .cta-strip { background: var(--teal); padding: 32px 40px; text-align: center; margin-top: 40px; }
+  .cta-strip h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 26px; text-transform: uppercase; color: var(--white); margin-bottom: 6px; }
+  .cta-strip p { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 18px; }
+  .cta-btn { display: inline-block; background: var(--white); color: var(--teal); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; padding: 13px 32px; text-decoration: none; border-radius: 2px; transition: background 0.2s; }
+  .cta-btn:hover { background: var(--off-white); }
+
+  /* ERROR */
+  .error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px 16px; font-size: 14px; border-radius: 2px; margin-top: 12px; display: none; }
+
+  /* HIDDEN */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  @media (max-width: 768px) {
+    .calc-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr 1fr; }
+    .zone-header { grid-template-columns: 100px 1fr auto; }
+    .zone-pace-val { display: none; }
+    nav { padding: 0 20px; }
+    .main { padding: 24px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark"></div>
+    <div class="nav-logo-text">
+      <span class="brand">Polar Endurance</span>
+      <span class="sub">Coaching</span>
+    </div>
+  </a>
+  <a href="index.html" class="nav-back">← Back to Site</a>
+</nav>
+
+<div class="hero">
+  <div class="eyebrow">Free Tools</div>
+  <h1>Race Pace &<br><em>Training Zone</em><br>Calculator</h1>
+  <p>Enter a recent race result to estimate your VO2 max, predict performance across all distances, and get your full training zones.</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('pace')">Race Pace Predictor</button>
+  <button class="tab" onclick="switchTab('zones')">Training Zone Calculator</button>
+</div>
+
+<!-- ══ TAB 1: RACE PACE PREDICTOR ══ -->
+<div id="tab-pace" class="tab-content active">
+  <div class="main">
+    <div class="calc-grid">
+
+      <!-- INPUT PANEL -->
+      <div>
+        <div class="panel">
+          <div class="panel-header"><h2>Your Input</h2></div>
+          <div class="panel-body">
+
+            <p style="font-size:13px; color:var(--grey-text); margin-bottom:20px; line-height:1.6;">Enter a recent race or time trial result. We'll use the Riegel formula to predict your equivalent performance across all distances and estimate your VO2 max using the Daniels method.</p>
+
+            <div class="form-group">
+              <label>Known Race Distance</label>
+              <select id="known-distance">
+                <option value="5">5 km</option>
+                <option value="10" selected>10 km</option>
+                <option value="21.0975">Half Marathon (21.1 km)</option>
+                <option value="42.195">Marathon (42.2 km)</option>
+                <option value="50">50 km</option>
+                <option value="80.4672">50 Miles</option>
+                <option value="100">100 km</option>
+                <option value="160.9344">100 Miles</option>
+                <option value="custom">Custom distance...</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="custom-dist-group" style="display:none;">
+              <label>Custom Distance (km)</label>
+              <input type="number" id="custom-dist-val" placeholder="e.g. 25" min="1" step="0.1">
+            </div>
+
+            <div class="form-group">
+              <label>Finish Time</label>
+              <div class="form-row">
+                <div>
+                  <input type="number" id="t-hours" placeholder="hh" min="0" max="99">
+                  <div class="form-hint">Hours</div>
+                </div>
+                <div>
+                  <input type="number" id="t-mins" placeholder="mm" min="0" max="59">
+                  <div class="form-hint">Minutes</div>
+                </div>
+                <div>
+                  <input type="number" id="t-secs" placeholder="ss" min="0" max="59">
+                  <div class="form-hint">Seconds</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider-label"><span>Target Race</span></div>
+
+            <div class="form-group">
+              <label>Target Race Distance</label>
+              <select id="target-distance">
+                <option value="5">5 km</option>
+                <option value="10">10 km</option>
+                <option value="21.0975">Half Marathon (21.1 km)</option>
+                <option value="42.195" selected>Marathon (42.2 km)</option>
+                <option value="50">50 km</option>
+                <option value="80.4672">50 Miles</option>
+                <option value="100">100 km</option>
+                <option value="160.9344">100 Miles</option>
+                <option value="custom_t">Custom distance...</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="custom-target-group" style="display:none;">
+              <label>Custom Target Distance (km)</label>
+              <input type="number" id="custom-target-val" placeholder="e.g. 60" min="1" step="0.1">
+            </div>
+
+            <div id="error-msg" class="error">Please fill in all fields correctly.</div>
+            <button class="btn" onclick="calculatePace()">Calculate →</button>
+            <button class="btn btn-reset" onclick="resetPace()">Reset</button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-header"><h2>About the Formulas</h2></div>
+          <div class="panel-body" style="font-size:13px; color:var(--grey-text); line-height:1.7;">
+            <p style="margin-bottom:10px;"><strong style="color:var(--dark);">Riegel Formula</strong> — T2 = T1 x (D2/D1)^1.06. Pete Riegel's fatigue coefficient accurately predicts road race performance. Less accurate beyond 100 miles or for highly technical trail courses.</p>
+            <p style="margin-bottom:10px;"><strong style="color:var(--dark);">VO2 Max (Daniels)</strong> — Estimated from velocity and oxygen cost at race pace. A rough indicator — lab testing gives a true figure.</p>
+            <p><strong style="color:var(--dark);">Trail Note</strong> — For mountain ultras, add 10-20% to predicted times to account for elevation and terrain.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS PANEL -->
+      <div id="pace-results">
+        <div class="panel">
+          <div class="panel-body">
+            <div class="results-placeholder">
+              <div class="icon">⏱</div>
+              <p>Enter your race details and hit Calculate to see your predicted performance across all distances.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 2: TRAINING ZONES ══ -->
+<div id="tab-zones" class="tab-content">
+  <div class="main">
+    <div class="calc-grid">
+
+      <!-- INPUT -->
+      <div>
+        <div class="panel">
+          <div class="panel-header"><h2>Your Details</h2></div>
+          <div class="panel-body">
+
+            <p style="font-size:13px; color:var(--grey-text); margin-bottom:20px; line-height:1.6;">Enter your details to get 5-zone heart rate and pace zones. For the most accurate zones, use a recent race result. HR zones use the Karvonen formula.</p>
+
+            <div class="form-group">
+              <label>Age</label>
+              <input type="number" id="z-age" placeholder="e.g. 35" min="16" max="80">
+            </div>
+
+            <div class="form-group">
+              <label>Resting Heart Rate (bpm)</label>
+              <input type="number" id="z-rhr" placeholder="e.g. 52" min="30" max="100">
+              <div class="form-hint">Measure first thing in the morning before getting up</div>
+            </div>
+
+            <div class="divider-label"><span>Known Race Result (for pace zones)</span></div>
+
+            <div class="form-group">
+              <label>Reference Race Distance</label>
+              <select id="z-dist">
+                <option value="5">5 km</option>
+                <option value="10" selected>10 km</option>
+                <option value="21.0975">Half Marathon</option>
+                <option value="42.195">Marathon</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Race Time</label>
+              <div class="form-row">
+                <div>
+                  <input type="number" id="z-hours" placeholder="hh" min="0" max="99">
+                  <div class="form-hint">Hours</div>
+                </div>
+                <div>
+                  <input type="number" id="z-mins" placeholder="mm" min="0" max="59">
+                  <div class="form-hint">Minutes</div>
+                </div>
+                <div>
+                  <input type="number" id="z-secs" placeholder="ss" min="0" max="59">
+                  <div class="form-hint">Seconds</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="error-zones" class="error">Please enter age and resting HR at minimum.</div>
+            <button class="btn" onclick="calculateZones()">Calculate Zones →</button>
+            <button class="btn btn-reset" onclick="resetZones()">Reset</button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-header"><h2>How to Use Your Zones</h2></div>
+          <div class="panel-body" style="font-size:13px; color:var(--grey-text); line-height:1.7;">
+            <p style="margin-bottom:8px;"><strong style="color:var(--dark);">Zone 1-2</strong> — Easy aerobic. 70-80% of your weekly training. Builds base, improves fat burning, aids recovery.</p>
+            <p style="margin-bottom:8px;"><strong style="color:var(--dark);">Zone 3</strong> — Tempo. Comfortably hard. Use sparingly - 1 session per week max.</p>
+            <p style="margin-bottom:8px;"><strong style="color:var(--dark);">Zone 4</strong> — Threshold. Race specific intensity. Hard interval sessions.</p>
+            <p><strong style="color:var(--dark);">Zone 5</strong> — VO2 max. Maximum effort. Short reps only, full recovery between.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ZONES RESULTS -->
+      <div id="zones-results">
+        <div class="panel">
+          <div class="panel-body">
+            <div class="results-placeholder">
+              <div class="icon">❤️</div>
+              <p>Enter your details to calculate your personalised heart rate and pace training zones.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-strip">
+  <h3>Want a plan built around these numbers?</h3>
+  <p>Get in touch and we'll build a training programme tailored to your zones, your goals, and your life.</p>
+  <a href="index.html#apply" class="cta-btn">Work With Polar Endurance →</a>
+</div>
+
+<script>
+// ── UTILITIES ──
+function secsToHMS(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.round(s%60);
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function secsToPaceStr(secsPerKm) {
+  const m = Math.floor(secsPerKm/60), s = Math.round(secsPerKm%60);
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function vo2fromPace(secsPerKm) {
+  const vkm = 3600 / secsPerKm; // km/h
+  const vm = vkm / 60; // m/min... actually we need m/min
+  const vms = vkm * 1000 / 60; // m/min
+  // Daniels: %VO2max from pace, then VO2max from %
+  // Use simplified: VO2max ≈ 0.8 + 0.1894393*e^(-0.012778*t) + 0.2989558*e^(-0.1932605*t) where t = race time mins
+  // Simpler Daniels velocity method:
+  const vo2 = -4.60 + 0.182258 * vms + 0.000104 * vms * vms;
+  const pctVo2 = 0.8 + 0.1894393 * Math.exp(-0.012778 * 0) + 0.2989558 * Math.exp(-0.1932605 * 0);
+  return Math.round(vo2 / 0.97 * 10) / 10;
+}
+
+function fitnessLabel(vo2, isMale) {
+  // General fitness bands
+  if (vo2 >= 60) return { label: 'Elite', color: '#c0392b' };
+  if (vo2 >= 52) return { label: 'Excellent', color: '#d4631a' };
+  if (vo2 >= 44) return { label: 'Good', color: '#4a9e5c' };
+  if (vo2 >= 36) return { label: 'Average', color: '#e6a817' };
+  return { label: 'Below Average', color: '#8a9ea5' };
+}
+
+function riegelPredict(knownDist, knownSecs, targetDist) {
+  return knownSecs * Math.pow(targetDist / knownDist, 1.06);
+}
+
+// ── TAB SWITCH ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── CUSTOM DISTANCE TOGGLE ──
+document.getElementById('known-distance').addEventListener('change', function() {
+  document.getElementById('custom-dist-group').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+document.getElementById('target-distance').addEventListener('change', function() {
+  document.getElementById('custom-target-group').style.display = this.value === 'custom_t' ? 'block' : 'none';
+});
+
+// ── PACE CALCULATOR ──
+function calculatePace() {
+  const err = document.getElementById('error-msg');
+  err.style.display = 'none';
+
+  // Get known distance
+  let knownDist = parseFloat(document.getElementById('known-distance').value);
+  if (document.getElementById('known-distance').value === 'custom') {
+    knownDist = parseFloat(document.getElementById('custom-dist-val').value);
+  }
+
+  // Get time
+  const h = parseInt(document.getElementById('t-hours').value) || 0;
+  const m = parseInt(document.getElementById('t-mins').value) || 0;
+  const s = parseInt(document.getElementById('t-secs').value) || 0;
+  const totalSecs = h*3600 + m*60 + s;
+
+  // Get target
+  let targetDist = parseFloat(document.getElementById('target-distance').value);
+  if (document.getElementById('target-distance').value === 'custom_t') {
+    targetDist = parseFloat(document.getElementById('custom-target-val').value);
+  }
+
+  if (!knownDist || !totalSecs || !targetDist) {
+    err.style.display = 'block'; err.textContent = 'Please fill in all fields.'; return;
+  }
+  if (totalSecs < 60) {
+    err.style.display = 'block'; err.textContent = 'Please enter a valid race time.'; return;
+  }
+
+  const knownPaceSecs = totalSecs / knownDist;
+  const targetSecs = riegelPredict(knownDist, totalSecs, targetDist);
+  const targetPaceSecs = targetSecs / targetDist;
+
+  // VO2 max estimate (Daniels-Jones method via velocity)
+  const vKmh = knownDist / (totalSecs / 3600);
+  const vMmin = vKmh * 1000 / 60;
+  const vo2raw = -4.60 + 0.182258 * vMmin + 0.000104 * vMmin * vMmin;
+  // percent utilisation (approximate for race distance)
+  const tMins = totalSecs / 60;
+  const pctUtil = 0.8 + 0.1894393 * Math.exp(-0.012778 * tMins) + 0.2989558 * Math.exp(-0.1932605 * tMins);
+  const vo2max = Math.round((vo2raw / pctUtil) * 10) / 10;
+  const fit = fitnessLabel(vo2max);
+
+  // All race distances
+  const races = [
+    { name: '5 km', dist: 5 },
+    { name: '10 km', dist: 10 },
+    { name: 'Half Marathon', dist: 21.0975 },
+    { name: 'Marathon', dist: 42.195 },
+    { name: '50 km', dist: 50 },
+    { name: '50 Miles', dist: 80.4672 },
+    { name: '100 km', dist: 100 },
+    { name: '100 Miles', dist: 160.9344 },
+  ];
+
+  let tableRows = '';
+  races.forEach(r => {
+    const pSecs = riegelPredict(knownDist, totalSecs, r.dist);
+    const pace = pSecs / r.dist;
+    const isTarget = Math.abs(r.dist - targetDist) < 0.1;
+    tableRows += `<tr class="${isTarget ? 'highlight' : ''}">
+      <td class="race-name">${r.name}</td>
+      <td class="pace">${secsToPaceStr(pace)} /km</td>
+      <td class="time">${secsToHMS(pSecs)}</td>
+    </tr>`;
+  });
+
+  // Key splits for target race
+  const splitDists = targetDist <= 5 ? [1,2,3,4,5]
+    : targetDist <= 10 ? [2,4,6,8,10]
+    : targetDist <= 21.1 ? [5,10,15,21.1]
+    : targetDist <= 42.2 ? [10,21.1,30,42.2]
+    : targetDist <= 50 ? [10,20,30,40,50]
+    : [10,20,30,40,50,60,70,80];
+
+  let splitRows = '';
+  splitDists.forEach(d => {
+    const t = riegelPredict(knownDist, totalSecs, d);
+    const isFull = Math.abs(d - targetDist) < 0.1;
+    splitRows += `<tr>
+      <td class="${isFull ? 'bold' : ''}">${d <= targetDist ? d + ' km' : ''}</td>
+      <td class="${isFull ? 'bold' : ''}">${secsToHMS(t)}</td>
+    </tr>`;
+  });
+
+  document.getElementById('pace-results').innerHTML = `
+    <div class="panel">
+      <div class="panel-header"><h2>Your Results</h2></div>
+      <div class="panel-body">
+
+        <div class="vo2-display">
+          <div class="vo2-label">Estimated VO2 Max</div>
+          <div class="vo2-number">${vo2max}</div>
+          <div class="vo2-unit">ml/kg/min</div>
+          <div class="vo2-fitness" style="background:${fit.color}">${fit.label}</div>
+        </div>
+
+        <div class="pace-result-big">
+          <div class="pace-unit">Target Race Pace</div>
+          <div class="pace-big">${secsToPaceStr(targetPaceSecs)}</div>
+          <div class="pace-unit">min/km</div>
+          <div class="pace-context">Predicted finish: ${secsToHMS(targetSecs)}</div>
+        </div>
+
+        <div class="section-label">All Race Predictions</div>
+        <table class="race-table">
+          <thead><tr><th>Distance</th><th>Target Pace</th><th>Finish Time</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+
+        <div class="section-label">Target Race Splits</div>
+        <table class="split-table">
+          <thead><tr><th>Checkpoint</th><th>Split Time</th></tr></thead>
+          <tbody>${splitRows}</tbody>
+        </table>
+
+        <p style="font-size:12px; color:var(--grey-mid); margin-top:16px; font-style:italic; line-height:1.6;">Predictions use the Riegel formula (fatigue exponent 1.06). For trail/mountain races, add 10-20% for elevation and terrain. VO2 max is an estimate - lab testing gives a precise figure.</p>
+      </div>
+    </div>`;
+}
+
+function resetPace() {
+  ['t-hours','t-mins','t-secs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('known-distance').value = '10';
+  document.getElementById('target-distance').value = '42.195';
+  document.getElementById('error-msg').style.display = 'none';
+  document.getElementById('pace-results').innerHTML = `<div class="panel"><div class="panel-body"><div class="results-placeholder"><div class="icon">⏱</div><p>Enter your race details and hit Calculate to see your predicted performance across all distances.</p></div></div></div>`;
+}
+
+// ── ZONES CALCULATOR ──
+function calculateZones() {
+  const err = document.getElementById('error-zones');
+  err.style.display = 'none';
+
+  const age = parseInt(document.getElementById('z-age').value);
+  const rhr = parseInt(document.getElementById('z-rhr').value);
+
+  if (!age || !rhr) {
+    err.style.display = 'block'; err.textContent = 'Please enter your age and resting heart rate.'; return;
+  }
+
+  // Max HR (Tanaka formula - more accurate than 220-age)
+  const mhr = Math.round(208 - (0.7 * age));
+  const hrr = mhr - rhr; // Heart rate reserve
+
+  // Karvonen zones (% of HRR + RHR)
+  const zones = [
+    { name: 'Zone 1', desc: 'Recovery', pctLow: 0.50, pctHigh: 0.60, cls: 'z1', effort: 'Very easy', training: 'Warm up, cool down, active recovery' },
+    { name: 'Zone 2', desc: 'Aerobic Base', pctLow: 0.60, pctHigh: 0.70, cls: 'z2', effort: 'Easy, conversational', training: 'Long runs, base building, majority of volume' },
+    { name: 'Zone 3', desc: 'Tempo', pctLow: 0.70, pctHigh: 0.80, cls: 'z3', effort: 'Moderate, steady', training: 'Tempo runs, marathon pace work' },
+    { name: 'Zone 4', desc: 'Threshold', pctLow: 0.80, pctHigh: 0.90, cls: 'z4', effort: 'Hard, sustainable', training: 'Threshold intervals, 10k-HM race pace' },
+    { name: 'Zone 5', desc: 'VO2 Max', pctLow: 0.90, pctHigh: 1.00, cls: 'z5', effort: 'Maximum', training: 'Short hard reps, 5k race effort' },
+  ];
+
+  // Pace zones from race time (if given)
+  const h = parseInt(document.getElementById('z-hours').value) || 0;
+  const m = parseInt(document.getElementById('z-mins').value) || 0;
+  const s = parseInt(document.getElementById('z-secs').value) || 0;
+  const totalSecs = h*3600 + m*60 + s;
+  const dist = parseFloat(document.getElementById('z-dist').value);
+
+  let pacesAvailable = false;
+  let racePaceSecs = 0;
+  if (totalSecs > 60 && dist) {
+    racePaceSecs = totalSecs / dist;
+    pacesAvailable = true;
+  }
+
+  // Pace zone multipliers (% of threshold/race pace)
+  const paceFactors = [
+    [1.30, 1.50],   // Z1: 130-150% of race pace (slower)
+    [1.15, 1.30],   // Z2: 115-130%
+    [1.06, 1.15],   // Z3: 106-115%
+    [1.00, 1.06],   // Z4: race pace to 106%
+    [0.92, 1.00],   // Z5: faster than race pace
+  ];
+
+  let zonesHTML = '';
+  zones.forEach((z, i) => {
+    const hrLow = Math.round(z.pctLow * hrr + rhr);
+    const hrHigh = Math.round(z.pctHigh * hrr + rhr);
+
+    let paceStr = '';
+    if (pacesAvailable) {
+      const pLow = racePaceSecs * paceFactors[i][0];
+      const pHigh = racePaceSecs * paceFactors[i][1];
+      paceStr = `${secsToPaceStr(pHigh)} - ${secsToPaceStr(pLow)} /km`;
+    }
+
+    zonesHTML += `
+    <div class="zone-bar">
+      <div class="zone-header ${z.cls}">
+        <div class="zone-name">${z.name}<br><span style="font-size:11px; font-weight:400; opacity:0.8;">${z.desc}</span></div>
+        <div class="zone-desc">${z.effort}<br><span style="font-size:11px; opacity:0.7;">${z.training}</span></div>
+        <div class="zone-hr">${hrLow} - ${hrHigh}<br><span style="font-size:11px; font-weight:400;">bpm</span></div>
+        ${paceStr ? `<div class="zone-pace-val">${paceStr}</div>` : ''}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('zones-results').innerHTML = `
+    <div class="panel">
+      <div class="panel-header"><h2>Your Training Zones</h2></div>
+      <div class="panel-body">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:24px;">
+          <div style="background:var(--dark); padding:18px; text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:40px; color:var(--teal-light);">${mhr}</div>
+            <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-top:4px;">Max HR</div>
+          </div>
+          <div style="background:var(--dark); padding:18px; text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:40px; color:var(--teal-light);">${rhr}</div>
+            <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-top:4px;">Rest HR</div>
+          </div>
+          <div style="background:var(--dark); padding:18px; text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:40px; color:var(--teal-light);">${hrr}</div>
+            <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-top:4px;">HR Reserve</div>
+          </div>
+        </div>
+
+        <div class="section-label">Heart Rate ${pacesAvailable ? '& Pace ' : ''}Zones — Karvonen Method</div>
+        <div class="zones-grid">${zonesHTML}</div>
+
+        <p style="font-size:12px; color:var(--grey-mid); margin-top:8px; font-style:italic; line-height:1.6;">Max HR calculated using the Tanaka formula (208 - 0.7 x age). HR zones use the Karvonen method (heart rate reserve). ${pacesAvailable ? 'Pace zones are approximate and based on your race pace input.' : 'Enter a race time above to add pace zones.'}</p>
+      </div>
+    </div>`;
+}
+
+function resetZones() {
+  ['z-age','z-rhr','z-hours','z-mins','z-secs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('z-dist').value = '10';
+  document.getElementById('error-zones').style.display = 'none';
+  document.getElementById('zones-results').innerHTML = `<div class="panel"><div class="panel-body"><div class="results-placeholder"><div class="icon">❤️</div><p>Enter your details to calculate your personalised heart rate and pace training zones.</p></div></div></div>`;
+}
+</script>
+</body>
+</html>
