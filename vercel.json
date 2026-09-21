@@ -3,6 +3,7 @@
   "builds": [{ "src": "*.html", "use": "@vercel/static" }],
   "routes": [
     { "src": "/calculator", "dest": "/calculator.html" },
+    { "src": "/calculator.html", "dest": "/calculator.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
